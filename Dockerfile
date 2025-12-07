@@ -1,43 +1,28 @@
 # --------------------
-# 1. BUILDER STAGE (Збірка) - залишається без змін
-# --------------------
-FROM node:20-alpine AS builder
-
-ARG APP_PORT=3001 
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-RUN npm run build
-
-
-# --------------------
 # 2. PRODUCTION STAGE (Запуск)
 # --------------------
 FROM node:20-alpine AS production
 
-# 1. Определение порта 3001
 ARG APP_PORT=3001
 ENV PORT $APP_PORT
 
-# 2. Встановлюємо робочу директорію
+# 1. Встановлюємо робочу директорію
 WORKDIR /app
 
-# 3. Копіюємо package.json та встановлюємо тільки production-залежності
-# ЦЕЙ КРОК ВИКОНУЄТЬСЯ ПІД КОРИСТУВАЧЕМ ROOT
+# 2. Копіюємо package.json
 COPY package*.json ./
+
+# 3. Встановлюємо тільки production-залежності (під ROOT)
+# RUN npm install --only=production (Виконується під root, щоб уникнути помилок)
 RUN npm install --only=production
 
-# 4. Копіюємо зібраний код (dist)
-COPY --from=builder /app/dist ./dist
-
-# 5. КОРЕКЦІЯ ДОЗВОЛІВ:
-# Ми змінюємо власника всіх файлів на стандартного користувача 'node',
-# щоб він міг їх читати та виконувати.
+# 4. КОРЕКЦІЯ ДОЗВОЛІВ:
+# Ми змінюємо власника всієї теки /app на користувача 'node'. 
+# Якщо тут зависає, то проблема в кількості файлів.
 RUN chown -R node:node /app 
+
+# 5. Копіюємо зібраний код (dist)
+COPY --from=builder /app/dist ./dist
 
 # 6. Переключаємося на стандартного, не-root користувача 'node'
 USER node 
