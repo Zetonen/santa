@@ -1,0 +1,38 @@
+# Файл: .github/workflows/build-and-push.yml
+
+name: Docker Build and Push (Manual Trigger)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker Image Tag (e.g., v1.0.0 or latest)'
+        required: true
+        default: 'latest'
+        type: string
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    env:
+      DOCKER_IMAGE_NAME: olk005430/santa
+      # 🔑 КРОК 1: Визначаємо змінну PORT тут (наприклад, 8080)
+      PORT: 3001
+      
+    steps:
+    # ... (steps for checkout, login, prepare_tag are unchanged) ...
+
+    # ...
+    # ... (пропуск Log in to Docker Hub and Prepare Image Tag)
+    # ...
+
+    - name: Build and push Docker image
+      uses: docker/build-and-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.prepare_tag.outputs.image_tag }}
+        # 🔑 КРОК 2: Передаємо змінну середовища PORT як Build Argument
+        build-args: |
+          APP_PORT=${{ env.PORT }} # Створюємо ARG з ім'ям APP_PORT, використовуючи значення env.PORT
