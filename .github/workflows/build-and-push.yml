@@ -1,6 +1,9 @@
-# Файл: .github/workflows/build-and-push.yml
-
 name: Docker Build and Push (Manual Trigger)
+
+# 1. Надаємо дозволи GITHUB_TOKEN для завантаження дій та роботи з регістрами
+permissions:
+  contents: read # Дозволяє читати код репозиторію
+  packages: write # Потрібен, якщо ви будете працювати з GitHub Container Registry (хоча тут використовується Docker Hub)
 
 on:
   workflow_dispatch:
@@ -16,23 +19,38 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
+      # Ваше ім'я в Docker Hub та назва репозиторію NestJS-проєкту
       DOCKER_IMAGE_NAME: olk005430/santa
-      # 🔑 КРОК 1: Визначаємо змінну PORT тут (наприклад, 8080)
+      # Порт, який буде використовуватися (визначено як 3001)
       PORT: 3001
       
     steps:
-    # ... (steps for checkout, login, prepare_tag are unchanged) ...
+    
+    # 2. Завантажуємо код репозиторію
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    # ...
-    # ... (пропуск Log in to Docker Hub and Prepare Image Tag)
-    # ...
+    # 3. Вхід у Docker Hub за допомогою Секретів
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_TOKEN }}
 
+    # 4. Формуємо повний тег образу (наприклад, olk005430/santa:1.0.0)
+    - name: Prepare Image Tag
+      id: prepare_tag
+      run: |
+        IMAGE_TAG=${{ env.DOCKER_IMAGE_NAME }}:${{ github.event.inputs.tag }}
+        echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    # 5. Збірка та відправлення образу
     - name: Build and push Docker image
       uses: docker/build-and-push-action@v5
       with:
         context: .
         push: true
         tags: ${{ steps.prepare_tag.outputs.image_tag }}
-        # 🔑 КРОК 2: Передаємо змінну середовища PORT як Build Argument
+        # Передача змінної PORT як Build Argument APP_PORT
         build-args: |
-          APP_PORT=${{ env.PORT }} # Створюємо ARG з ім'ям APP_PORT, використовуючи значення env.PORT
+          APP_PORT=${{ env.PORT }}
