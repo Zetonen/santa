@@ -1,7 +1,22 @@
-FROM node:20-alpine AS deps_stage
+# ------------------------------
+# 1. BUILDER STAGE (Збірка коду)
+# ------------------------------
+FROM node:20-alpine AS builder
+
+ARG APP_PORT=3001 
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
 
 
-COPY --from=deps_stage /app/dist ./dist
+# ------------------------------
+# 2. PRODUCTION STAGE (Запуск)
+# ------------------------------
+# Це фінальна стадія
+FROM node:20-alpine AS production
 
 ARG APP_PORT=3001
 ENV PORT $APP_PORT
@@ -9,14 +24,12 @@ ENV PORT $APP_PORT
 WORKDIR /app
 
 COPY package*.json ./
-
-
 RUN npm install --only=production
 
 
-RUN chown -R node:node /app 
-
 COPY --from=builder /app/dist ./dist
+
+RUN chown -R node:node /app 
 
 USER node 
 
