@@ -1,7 +1,10 @@
 # --------------------
-# 2. PRODUCTION STAGE (Запуск)
-# --------------------
-FROM node:20-alpine AS production
+FROM node:20-alpine AS deps_stage # <-- ЗМІНА ІМЕНІ СТАДІЇ
+
+# ... (пропуск) ...
+
+# 5. Копіюємо зібраний код (dist)
+COPY --from=deps_stage /app/dist ./dist
 
 ARG APP_PORT=3001
 ENV PORT $APP_PORT
