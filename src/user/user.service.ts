@@ -30,4 +30,30 @@ export class UserService {
     }
     return user;
   }
+
+  async randomStart() {
+    const users = await this.userRepository.find();
+    if (users.length < 2) {
+      throw new BadRequestException('Мало учасників для гри (мінімум 2)');
+    }
+    const shuffledUsers = this.shuffleArray([...users]);
+
+    for (let i = 0; i < shuffledUsers.length; i++) {
+      const giver = shuffledUsers[i];
+      const receiver = shuffledUsers[(i + 1) % shuffledUsers.length];
+
+      giver.recipientId = receiver.id;
+    }
+
+    await this.userRepository.save(shuffledUsers);
+
+    return { message: 'Жеребкування завершено успішно!' };
+  }
+  private shuffleArray(array: User[]): User[] {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
 }

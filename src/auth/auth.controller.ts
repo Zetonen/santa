@@ -19,7 +19,7 @@ export class AuthController {
     if (recipientId) {
       const recipient: User | null =
         await this.authService.findOneById(recipientId);
-      return { ...instanceToPlain(user), recipient, token };
+      return { user: { ...instanceToPlain(user), recipient }, token };
     }
     return { user, token };
   }
